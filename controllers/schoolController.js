@@ -2,15 +2,33 @@ const { z } = require("zod");
 const School = require("../models/school.model");
 
 const addSchoolSchema = z.object({
-  name: z.string(),
-  address: z.string(),
-  latitude: z.number(),
-  longitude: z.number(),
+  name: z.string({
+    required_error: "name is required",
+    invalid_type_error: "name must be a string",
+  }),
+  address: z.string({
+    required_error: "address is required",
+    invalid_type_error: "address must be a string",
+  }),
+  latitude: z.number({
+    required_error: "latitude is required",
+    invalid_type_error: "latitude must be a number",
+  }),
+  longitude: z.number({
+    required_error: "longitude is required",
+    invalid_type_error: "longitude must be a number",
+  }),
 });
 
 const listSchoolsSchema = z.object({
-  latitude: z.preprocess((val) => parseFloat(val), z.number().nonnegative()),
-  longitude: z.preprocess((val) => parseFloat(val), z.number().nonnegative()),
+  latitude: z.string({
+    required_error: "latitude is required",
+    invalid_type_error: "latitude must be a string",
+  }),
+  longitude: z.string({
+    required_error: "longitude is required",
+    invalid_type_error: "longitude must be a string",
+  }),
 });
 
 exports.addSchool = async (req, res) => {
@@ -20,20 +38,29 @@ exports.addSchool = async (req, res) => {
     const newSchool = await School.create(validateData);
 
     res.status(201).json({
+      status: "success",
+      statusCode: 201,
       message: "School added successfully",
       schoolId: newSchool.id,
     });
   } catch (err) {
     if (err instanceof z.ZodError) {
-      return res.status(400).json({ error: err.errors });
+      return res
+        .status(400)
+        .json({ status: "bad-request", statusCode: 400, error: err.errors });
     }
     console.error("Error inserting school:", err);
-    res.status(500).json({ error: "Database error" });
+    res.status(500).json({
+      status: "server error",
+      statusCode: 500,
+      error: "Database error",
+    });
   }
 };
 
 exports.fetchSchools = async (req, res) => {
   try {
+    console.log("Query//--", req.query);
     const validatedQuery = listSchoolsSchema.parse(req.query);
     const { latitude, longitude } = validatedQuery;
 
@@ -53,8 +80,17 @@ exports.fetchSchools = async (req, res) => {
 
     res.json(schoolsWithDistance);
   } catch (err) {
-    console.error("Error fetching schools:", err);
-    return res.status(500).json({ error: "Database error" });
+    if (err instanceof z.ZodError) {
+      return res
+        .status(400)
+        .json({ status: "bad-request", statusCode: 400, error: err.errors });
+    }
+    console.error("Error listing school:", err);
+    res.status(500).json({
+      status: "server error",
+      statusCode: 500,
+      error: "Database error",
+    });
   }
 };
 
