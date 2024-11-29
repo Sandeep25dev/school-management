@@ -12,7 +12,7 @@ app.use("/api/schools", schoolRoutes);
 app.listen(process.env.SERVER_PORT, async function () {
   try {
     await sequelize.sync({ force: false });
-    console.log(`Server is running on PORT ${PORT}`);
+    console.log(`Server is live now`);
   } catch (err) {
     console.error("Error syncing database:", err);
   }
